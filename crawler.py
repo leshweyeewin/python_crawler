@@ -231,7 +231,7 @@ if __name__ == "__main__":
                 if data != "error":
                     data = url.encode('utf-8') + "," + data 
                     writer.writerow(data.split(','))
-                    n_products++
+                    n_products += 1
                     if(target > 0 and n_products > target):
                         break
 
