@@ -28,7 +28,6 @@ def getLinks_amazon(url, soup, protocol, domain):
         link = attr.get('href')
         if (link != None): 
             if (link.startswith('http') and "gp/offer-listing/" not in link):
-                print(link)
                 links = links + [link]
 
     # get all links of result pages
@@ -37,7 +36,6 @@ def getLinks_amazon(url, soup, protocol, domain):
         if (link != None): 
             if (link.startswith('/') and "page=" in link and "page=1" not in link ):
                 link = protocol + "://" + domain + link
-                print(link)
                 links = links + [link]
     return links
 
@@ -48,7 +46,6 @@ def getLinks_ebay(url, soup, protocol, domain):
         link = attr.get('href')
         if (link != None): 
             if ("hash=" in link or "_pgn=" in link):
-                print(link)
                 links = links + [link]
     return links
 
@@ -64,7 +61,7 @@ def parse(base_url, html_text):
 #Output: "url,name,image,price,mean" (if successful)
 #        "error" (if fail)         
 def parse_amazon(html_text):
-    soup = BeautifulSoup(open("script.html")) # need to change
+    soup = BeautifulSoup(html_text) # need to change
     # find name
     seivedMeta = soup.find_all('meta', attrs={'name':'title'})
     text = str(seivedMeta[0])
@@ -108,7 +105,7 @@ def parse_amazon(html_text):
         mean = (float(firstVal)+float(secondVal))/2.0
         # return format = name, range, mean
         # return example: name, image, 40.00 - 60.00, 50.00
-            return name +"," + img + "," + firstVal + "-" + secondVal + "," + mean
+        return name +"," + img + "," + firstVal + "-" + secondVal + "," + mean
 
 #Input: HTML Text
 #Output: "url,name,image,price,mean" (if successful)
@@ -142,7 +139,7 @@ def parse_lazada(html_text):
 #Output: "url,name,price" (if successful)
 #        "error" (if fail) 
 def parse_ebay(html_text):
-    soup = BeautifulSoup(open("Untitled Document"))
+    soup = BeautifulSoup(html_text)
     span = soup.find_all('span', attrs={'id':'prcIsum'})[0]
     name = soup.find_all('h1', attrs={'id':'itemTitle'})[0]
     img = soup.findAll('img', {'id':'icImg'})[0]
@@ -174,7 +171,7 @@ def parse_aliexpress(html_text):
 # To run:
 # python3 crawler.py <filename> <search term>
 
-if __name__ == "__main__"
+if __name__ == "__main__":
     if (len(sys.argv) < 2):
         print("Search Term Argument is Missing")
         sys.exit()
@@ -204,16 +201,16 @@ if __name__ == "__main__"
 
         #time.sleep(3) # sleep 1s to avoid crawler being mistaken as DDOS attacker
 
-        if (url not in pagesVisited):
+        if (url not in pagesVisited): #Parse
             html_text, soup, protocol, domain = parse_url(url)
             pagesVisited.add(url)
-            print("Visiting: "+url)
+            # print("Visiting: " + url)
             if ("page" not in url and "_pgn=" not in url and url != amazon_URL and url != ebay_URL): #product page
-                #file.write(url.encode('utf-8')+"|urldelimit|"+html_text.encode('utf-8'))
                 data = parse(url.encode('utf-8'), html_text.encode('utf-8'))
                 writer.writerow(data.split(','))
-                #print(url+"|urldelimit|"+soup.prettify())
-            else:
+                print(html_text)
+
+            else: #Scrape
                 #print(soup.prettify())
                 if ("amazon.com" in url):
                     links = getLinks_amazon(url, soup, protocol, domain)
