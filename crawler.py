@@ -187,16 +187,18 @@ def parse_aliexpress(html_text):
 
 # Main Program
 # To run:
-# python3 crawler.py <filename> <search term>
+# python3 crawler.py <num_links> <search term>
 
 if __name__ == "__main__":
-    if (len(sys.argv) < 1):
+    n_products = 0
+    if (len(sys.argv) < 2):
         print("Search Term Argument is Missing")
         sys.exit()
-    else:
-        search_term = sys.argv[1]
-        if (len(sys.argv) > 1):
-            for i in range(2,len(sys.argv)):
+    else   
+        target = sys.argv[1]
+        search_term = sys.argv[2]
+        if (len(sys.argv) > 2):
+            for i in range(3,len(sys.argv)):
                 search_term += "+" + sys.argv[i]
 
     pagesVisited = set()
@@ -207,7 +209,7 @@ if __name__ == "__main__":
     ebay_URL = ebay_format % search_term
     pagesToVisit += [ebay_URL]
     
-    search_term.replace("+", "_") 
+    search_term = search_term.replace("+", "_") 
     file_name = "./" + search_term + '.csv'
     file = open(file_name, 'w+')
     writer = csv.writer(file, delimiter = ",")
@@ -229,6 +231,9 @@ if __name__ == "__main__":
                 if data != "error":
                     data = url.encode('utf-8') + "," + data 
                     writer.writerow(data.split(','))
+                    n_products++
+                    if(n_products > target):
+                        break
 
             else: #Scrape
                 #print(soup.prettify())
