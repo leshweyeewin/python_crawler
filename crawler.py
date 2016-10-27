@@ -172,19 +172,14 @@ def parse_aliexpress(html_text):
 # python3 crawler.py <filename> <search term>
 
 if __name__ == "__main__":
-    if (len(sys.argv) < 2):
+    if (len(sys.argv) < 1):
         print("Search Term Argument is Missing")
         sys.exit()
     else:
-        search_term = sys.argv[2]
-        if (len(sys.argv) > 2):
-            for i in range(3,len(sys.argv)):
+        search_term = sys.argv[1]
+        if (len(sys.argv) > 1):
+            for i in range(2,len(sys.argv)):
                 search_term += "+" + sys.argv[i]
-
-    file_name = "./" + sys.argv[1] + '.csv'
-    file = open(file_name, 'w+')
-    writer = csv.writer(file, delimiter =",")
-    #writer.writerow(["Link", "Title", "Image", "Price range", "Avg price"])
 
     pagesVisited = set()
 
@@ -193,6 +188,12 @@ if __name__ == "__main__":
 
     ebay_URL = ebay_format % search_term
     pagesToVisit += [ebay_URL]
+    
+    search_term.replace("+", "_") 
+    file_name = "./" + search_term + '.csv'
+    file = open(file_name, 'w+')
+    writer = csv.writer(file, delimiter = ",")
+    #writer.writerow(["Link", "Title", "Image", "Price range", "Avg price"])
 
     while pagesToVisit != []:
         # Start from the beginning of collection of pages to visit:
