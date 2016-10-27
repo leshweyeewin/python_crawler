@@ -58,10 +58,8 @@ def parse(base_url, html_text):
         csv = parse_amazon(html_text)
     elif ("ebay.com" in base_url):
         csv = parse_ebay(html_text)
-    
-    # Write to a csv
-
-
+    return base_url + "," + csv 
+   
 #Input: HTML Text
 #Output: "url,name,image,price,mean" (if successful)
 #        "error" (if fail)         
@@ -186,8 +184,10 @@ if __name__ == "__main__"
             for i in range(3,len(sys.argv)):
                 search_term += "+" + sys.argv[i]
 
-    file_name = "./" + sys.argv[1] + '.txt'
-    file = open(file_name, 'w')
+    file_name = "./" + sys.argv[1] + '.csv'
+    file = open(file_name, 'w+')
+    writer = csv.writer(file, delimiter =",")
+    #writer.writerow(["Link", "Title", "Image", "Price range", "Avg price"])
 
     pagesVisited = set()
 
@@ -209,8 +209,9 @@ if __name__ == "__main__"
             pagesVisited.add(url)
             print("Visiting: "+url)
             if ("page" not in url and "_pgn=" not in url and url != amazon_URL and url != ebay_URL): #product page
-                file.write(url.encode('utf-8')+"|urldelimit|"+html_text.encode('utf-8'))
-                parse(url.encode('utf-8'), html_text.encode('utf-8'))
+                #file.write(url.encode('utf-8')+"|urldelimit|"+html_text.encode('utf-8'))
+                data = parse(url.encode('utf-8'), html_text.encode('utf-8'))
+                writer.writerow(data.split(','))
                 #print(url+"|urldelimit|"+soup.prettify())
             else:
                 #print(soup.prettify())
