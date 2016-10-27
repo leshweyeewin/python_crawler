@@ -232,7 +232,7 @@ if __name__ == "__main__":
                     data = url.encode('utf-8') + "," + data 
                     writer.writerow(data.split(','))
                     n_products++
-                    if(n_products > target):
+                    if(target > 0 and n_products > target):
                         break
 
             else: #Scrape
