@@ -67,7 +67,7 @@ def parse(base_url, html_text):
 #        "error" (if fail)         
 def parse_amazon(html_text):
     try:
-        soup = BeautifulSoup(html_text) # need to change
+        soup = BeautifulSoup(html_text, "html.parser") # need to change
         # find name
         seivedMeta = soup.find_all('meta', attrs={'name':'title'})
         text = str(seivedMeta[0])
@@ -122,6 +122,7 @@ def parse_amazon(html_text):
 #find title
 def parse_lazada(html_text):
     try:
+        soup = BeautifulSoup(html_text, "html.parser")
         seivedMeta = soup.find_all('title')
         name = str(seivedMeta).split(">")[1]
         name = name.split("|")[0].strip()
@@ -151,9 +152,9 @@ def parse_lazada(html_text):
 #        "error" (if fail) 
 def parse_ebay(html_text):
     try:
-        soup = BeautifulSoup(html_text)
+        soup = BeautifulSoup(html_text, "html.parser")
         span = soup.find_all('span', attrs={'id':'prcIsum'})[0]
-        print span
+
         name = soup.find_all('h1', attrs={'id':'itemTitle'})[0]
         img = soup.findAll('img', {'id':'icImg'})[0]
         if (len(name.contents) < 2 or len(span.contents) < 1):
@@ -167,7 +168,7 @@ def parse_ebay(html_text):
 #        "error" (if fail) 
 def parse_aliexpress(html_text):
     try:
-        soup = BeautifulSoup(open("Untitled Document 3"))
+        soup = BeautifulSoup(html_text, "html.parser")
         tempPrice = soup.find_all('span', attrs={'itemprop':'lowPrice'})
         if (len(tempPrice)== 0):
             lowPrice = soup.find_all('span', attrs={'itemprop':'price'})[0]
@@ -194,7 +195,7 @@ if __name__ == "__main__":
     if (len(sys.argv) < 2):
         print("Search Term Argument is Missing")
         sys.exit()
-    else   
+    else:
         target = sys.argv[1]
         search_term = sys.argv[2]
         if (len(sys.argv) > 2):
