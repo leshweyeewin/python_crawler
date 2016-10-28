@@ -22,7 +22,6 @@ def parse_url(url):
 def getLinks_amazon(url, soup, protocol, domain):
     links = []
 
-
     # get all links of product pages
     for attr in soup.find_all('a', attrs={'class':'a-link-normal a-text-normal'}):    
         link = attr.get('href')
@@ -196,7 +195,7 @@ if __name__ == "__main__":
         print("Search Term Argument is Missing")
         sys.exit()
     else:
-        target = sys.argv[1]
+        target = int(sys.argv[1])
         search_term = sys.argv[2]
         if (len(sys.argv) > 2):
             for i in range(3,len(sys.argv)):
