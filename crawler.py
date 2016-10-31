@@ -79,16 +79,17 @@ def getLinks_amazon(url, soup, protocol, domain):
     for attr in soup.find_all('a', attrs={'class':'a-link-normal a-text-normal'}):    
         link = attr.get('href')
         if (link != None): 
-            if (link.startswith('http') and "gp/offer-listing/" not in link):
+            if (link.startswith('http') and "gp/offer-listing/" not in link and link not in pagesVisited and link not in links):
                 links = links + [link]
 
     # get all links of result pages
     for attr in soup.find_all('span', attrs={'class':'pagnLink'}):
         link = attr.a.get('href')
         if (link != None): 
-            if (link.startswith('/') and "page=" in link and "page=1" not in link ):
+            if (link.startswith('/') and "page=" in link and "page=1" not in link and link not in links):
                 link = protocol + "://" + domain + link
-                links = links + [link]
+                if (link not in pagesVisited):
+                    links = links + [link]
     return links
 
 def getLinks_ebay(url, soup, protocol, domain):
@@ -97,8 +98,9 @@ def getLinks_ebay(url, soup, protocol, domain):
     for attr in soup.find_all('a'):
         link = attr.get('href')
         if (link != None): 
-            if ("hash=" in link or "_pgn=" in link):
-                links = links + [link]
+            if ("hash=" in link or "_pgn=" in link and link not in links):
+                if (link not in pagesVisited):
+                    links = links + [link]
     return links
 
 # Main Parse Function
