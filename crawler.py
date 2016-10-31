@@ -254,10 +254,10 @@ if __name__ == "__main__":
                 search_term += "+" + sys.argv[i]
 
     amazon_URL = amazon_URL + search_term
-    pagesToVisit = [amazon_URL]
+    pagesToVisit.put(amazon_URL)
 
     ebay_URL = ebay_URL % search_term
-    pagesToVisit += [ebay_URL]
+    pagesToVisit.put(ebay_URL)
     
     search_term = search_term.replace("+", "_") 
     file_name = "./" + search_term + '.csv'
