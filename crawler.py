@@ -5,58 +5,64 @@ import sys
 import csv
 import time
 import threading
+import multiprocessing
 
 # Global variables
 exitFlag = 0
-num_thread = 100
+num_thread = 10
 pagesVisited = set()
-pagesToVisit = Queue()
-lock = threading.Lock()
-n_products = 0
+links = multiprocessing.Queue()
+productLinks = multiprocessing.Queue()
+lock = multiprocessing.Lock()
+#pagesToVisit = Queue()
+#lock = threading.Lock()
+num = multiprocessing.Value('i', 0)
 target = 0
 amazon_URL = "https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords="
 ebay_URL = "http://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=%s&_sacat=0"
 
-def crawl(i, pagesToVisit, writer):
-    global pagesVisited, n_products, exitFlag
-
-    #print ("#products:" + str(n_products) + ", #target:" + str(target) + ", #links:" + str(pagesToVisit.qsize()))
-    url = pagesToVisit.get()
-    pagesVisited.add(url)
-    print("#"+str(i)+"- Visiting: "+url)
-                    
-    #time.sleep(3) # sleep 1s to avoid crawler being mistaken as DDOS attacker
-
-    html_text, soup, protocol, domain = parse_url(url)           
-            
-    if ("page" not in url and "_pgn=" not in url and url != amazon_URL and url != ebay_URL): #product page   
-        data = parse(url.encode('utf-8'), html_text.encode('utf-8'))
-        if data != "error":
-            data = url.encode('utf-8') + "," + data 
-            lock.acquire()
-            writer.writerow(data.split(','))
-            n_products += 1
-            lock.release()
-        #file.write(str(n_products)+". "+url+"|urldelimit|"+html_text)
-
-        if(target > 0 and n_products >= target):
-            #print("target reached")
+def crawl(pagesToVisit, productPages, target, ebay_URL, amazon_URL):
+    global pagesVisited, exitFlag
+    while not exitFlag:
+        if (target > 0 and productPages.qsize() > target):
             exitFlag = 1
+            break
+        else:
+            url = pagesToVisit.get()
+            pagesVisited.add(url)
+            lock.acquire()
+            print ("#products:" + str(productPages.qsize()) + ", #target:" + str(target) + ", #links:" + str(pagesToVisit.qsize()))
+            print("Visiting: "+url)
+            lock.release()
+                            
+            #time.sleep(3) # sleep 1s to avoid crawler being mistaken as DDOS attacker
+
+            html_text, soup, protocol, domain = parse_url(url)           
+            
+            if ("page" not in url and "_pgn=" not in url and url != amazon_URL and url != ebay_URL): #product page   
+                #print("Product Page")
+                data = parse(url, html_text)
+                if data != "error":
+                    data = url + "," + data 
+                    productPages.put(data)
+                #file.write(str(n_products)+". "+url+"|urldelimit|"+html_text)
                 
-    else: #result page         
-        #file.write(url+"|urldelimit|"+html_text)
-        links = getLinks(url, soup, protocol, domain)        
-        for link in links:
-            if (link != None): 
-                if (domain in link or "page=" in link or "hash=" in link or "_pgn=" in link):
-                    # Add the pages that we visited to the end of our collection of pages to visit:
-                    pagesToVisit.put(link)
-    pagesToVisit.task_done()
+                        
+            else: #result page
+                #print("Result Page")
+                #file.write(url+"|urldelimit|"+html_text)
+                links = getLinks(url, soup, protocol, domain)        
+                for link in links:
+                    if (link != None): 
+                        if (domain in link or "page=" in link or "hash=" in link or "_pgn=" in link):
+                            # Add the pages that we visited to the end of our collection of pages to visit:
+                            pagesToVisit.put(link)
+    print("Process existing")
     
 def parse_url(url):
     r  = requests.get(url)
     data = r.text
-    soup = BeautifulSoup(data)
+    soup = BeautifulSoup(data, "html.parser")
 
     protocol = (url.split(':'))[0]
     url = url.replace(protocol+"://", "")
@@ -74,7 +80,7 @@ def getLinks(url, soup, protocol, domain):
 
 def getLinks_amazon(url, soup, protocol, domain):
     links = []
-
+    print(soup.prettify().encode('utf-8'))
     # get all links of product pages
     for attr in soup.find_all('a', attrs={'class':'a-link-normal a-text-normal'}):    
         link = attr.get('href')
@@ -101,6 +107,8 @@ def getLinks_ebay(url, soup, protocol, domain):
             if ("hash=" in link or "_pgn=" in link and link not in links):
                 if (link not in pagesVisited):
                     links = links + [link]
+    if (links == []):
+        sys.exit()
     return links
 
 # Main Parse Function
@@ -192,7 +200,7 @@ def parse_lazada(html_text):
         #find price
         seivedSpan = soup.find_all('span', attrs={'id':'special_price_box'})
         if(len(seivedSpan) == 0):
-            print "error: no price found"
+            print ("error: no price found")
         price = str(seivedSpan[0].contents[0])
             
         return name +"," + image + "," + str(price) + " - " + str(price) + "," + str(price)
@@ -234,7 +242,7 @@ def parse_aliexpress(html_text):
         img = soup.findAll('img', {'alt':name.contents[0]})[0]
         mean = (float(lowPrice.contents[0]) + float(highPrice.contents[0])) / 2.0
         if (len(name.contents) < 1 or lowPrice.contents[0] < 0 or highPrice.contents[0] < 0):
-            print "error"
+            print ("error")
         return name.contents[0] + "," + img.get('src') + "," + str(lowPrice.contents[0]) + "-" + str(highPrice.contents[0]) + "," + str(mean)
     except:
         return "error"
@@ -244,7 +252,6 @@ def parse_aliexpress(html_text):
 # To run:
 # python3 crawler.py <num_links> <search term>
 if __name__ == "__main__":
-    global target, exitFlag
     if (len(sys.argv) < 2):
         print("Search Term Argument is Missing")
         sys.exit()
@@ -256,10 +263,10 @@ if __name__ == "__main__":
                 search_term += "+" + sys.argv[i]
 
     amazon_URL = amazon_URL + search_term
-    pagesToVisit.put(amazon_URL)
+    #links.put(amazon_URL)
 
     ebay_URL = ebay_URL % search_term
-    pagesToVisit.put(ebay_URL)
+    links.put(ebay_URL)
     
     search_term = search_term.replace("+", "_") 
     file_name = "./" + search_term + '.csv'
@@ -267,15 +274,16 @@ if __name__ == "__main__":
     writer = csv.writer(file, delimiter = ",")
     #writer.writerow(["Link", "Title", "Image", "Price range", "Avg price"])
 
-    for i in range(num_thread):
-        if (exitFlag): 
-            pagesToVisit = Queue()
-            break
-        thread = crawl(i, pagesToVisit, writer)
-        if(thread != None):
-            thread.setDaemon(True)
-            thread.start()
+    start = time.time()
 
-    # Wait until all links have been visited
-    pagesToVisit.join()
+    the_pool = multiprocessing.Pool(target, crawl,(links, productLinks, target, ebay_URL, amazon_URL,))
+
+    the_pool.close() # no more tasks
+    the_pool.join()  # wrap up current tasks
+
+    for i in range(productLinks.qsize()):
+        writer.writerow(productLinks.get().split(','))
     file.close()
+
+    end = time.time()
+    print("Elapsed time:"+str(end-start))
