@@ -21,10 +21,11 @@ num_of_links_left = multiprocessing.Value('i', 0)
 target = 0
 amazon_URL = "https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords="
 ebay_URL = "http://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=%s&_sacat=0"
+aliexpress_URL = "https://www.aliexpress.com/wholesale?catId=0&initiative_id=SB_20161031115352&SearchText="
+lazada_URL = "http://www.lazada.sg/catalog/?q="
 
 def crawl(pagesToVisit, productPages, target, ebay_URL, amazon_URL):
     global pagesVisited, exitFlag, num_of_crawled_links, num_of_links_left
-
     while not exitFlag:
         if (target > 0 and num_of_crawled_links.value > target):
             exitFlag = 1
@@ -39,16 +40,15 @@ def crawl(pagesToVisit, productPages, target, ebay_URL, amazon_URL):
                             
             #time.sleep(3) # sleep 1s to avoid crawler being mistaken as DDOS attacker
 
-            html_text, soup, protocol, domain = parse_url(url)           
-            
-            if ("page" not in url and "_pgn=" not in url and url != amazon_URL and url != ebay_URL): #product page   
+            html_text, soup, protocol, domain = parse_url(url)                       
+            if ("page" not in url and "_pgn=" not in url and url != amazon_URL and url != ebay_URL and url != aliexpress_URL and url != lazada_URL): #product page   
                 #print("Product Page")
                 data = parse(url, html_text)
                 if data != "error":
                     data = url + "," + data 
                     productPages.put(data)
                     num_of_crawled_links.value += 1
-                #file.write(str(n_products)+". "+url+"|urldelimit|"+html_text)
+                   #file.write(str(n_products)+". "+url+"|urldelimit|"+html_text)
                 
                         
             else: #result page
@@ -57,10 +57,11 @@ def crawl(pagesToVisit, productPages, target, ebay_URL, amazon_URL):
                 links = getLinks(url, soup, protocol, domain)        
                 for link in links:
                     if (link != None): 
-                        if (domain in link or "page=" in link or "hash=" in link or "_pgn=" in link):
-                            # Add the pages that we visited to the end of our collection of pages to visit:
-                            pagesToVisit.put(link)
-                            num_of_links_left.value+=1
+                        if (domain in link or "page=" in link or "hash=" in link or "_pgn=" in link):   
+                            if (link not in pagesVisited):
+                                # Add the pages that we visited to the end of our collection of pages to visit:
+                                pagesToVisit.put(link)
+                                num_of_links_left.value+=1
     print("Process existing")
     
 def parse_url(url):
@@ -68,7 +69,7 @@ def parse_url(url):
     data = r.text
     soup = BeautifulSoup(data, "html.parser")
 
-    protocol = (url.split(':'))[0]
+    protocol = (url.split(':'))[0]    
     url = url.replace(protocol+"://", "")
     domain = (url.split('/'))[0]
 
@@ -79,7 +80,11 @@ def getLinks(url, soup, protocol, domain):
     if ("amazon.com" in url):
         links = getLinks_amazon(url, soup, protocol, domain)
     elif ("ebay.com" in url):
-        links = getLinks_ebay(url, soup, protocol, domain)
+        links = getLinks_ebay(url, soup, protocol, domain)    
+    elif ("aliexpress" in url):
+        links = getLinks_aliexpress(url, soup, protocol, domain)
+    elif ("lazada" in url):
+        links = getLinks_lazada(url, soup, protocol, domain)    
     return links
 
 def getLinks_amazon(url, soup, protocol, domain):
@@ -111,8 +116,25 @@ def getLinks_ebay(url, soup, protocol, domain):
             if ("hash=" in link or "_pgn=" in link and link not in links):
                 if (link not in pagesVisited):
                     links = links + [link]
-    if (links == []):
-        sys.exit()
+    return links
+
+def getLinks_lazada(url, soup, protocol, domain):
+    links = []
+    #print(soup.prettify())
+    for attr in soup.find_all('div', attrs={'class':'product-card new_ outofstock installments_ mastercard'}):
+        link = attr.a['href']
+        if (link != None): 
+            if (link not in pagesVisited):
+                #print(link)
+                links = links + [link]
+
+    for attr in soup.find_all('link'):
+        link = attr.get('href')
+        if (link != None): 
+            if ("?page=" in link and "?page=1" not in link and link not in links):
+                if (link not in pagesVisited):
+                    #print(link)
+                    links = links + [link]       
     return links
 
 # Main Parse Function
