@@ -16,22 +16,24 @@ productLinks = multiprocessing.Queue()
 lock = multiprocessing.Lock()
 #pagesToVisit = Queue()
 #lock = threading.Lock()
-num = multiprocessing.Value('i', 0)
+num_of_crawled_links = multiprocessing.Value('i', 0)
+num_of_links_left = multiprocessing.Value('i', 0)
 target = 0
 amazon_URL = "https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords="
 ebay_URL = "http://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=%s&_sacat=0"
 
 def crawl(pagesToVisit, productPages, target, ebay_URL, amazon_URL):
-    global pagesVisited, exitFlag
+    global pagesVisited, exitFlag, num_of_crawled_links, num_of_links_left
+
     while not exitFlag:
-        if (target > 0 and productPages.qsize() > target):
+        if (target > 0 and num_of_crawled_links.value > target):
             exitFlag = 1
             break
         else:
             url = pagesToVisit.get()
             pagesVisited.add(url)
             lock.acquire()
-            print ("#products:" + str(productPages.qsize()) + ", #target:" + str(target) + ", #links:" + str(pagesToVisit.qsize()))
+            print ("#products:" + str(num_of_crawled_links.value) + ", #target:" + str(target) + ", #links:" + str(num_of_links_left.value))
             print("Visiting: "+url)
             lock.release()
                             
@@ -45,6 +47,7 @@ def crawl(pagesToVisit, productPages, target, ebay_URL, amazon_URL):
                 if data != "error":
                     data = url + "," + data 
                     productPages.put(data)
+                    num_of_crawled_links.value += 1
                 #file.write(str(n_products)+". "+url+"|urldelimit|"+html_text)
                 
                         
@@ -57,6 +60,7 @@ def crawl(pagesToVisit, productPages, target, ebay_URL, amazon_URL):
                         if (domain in link or "page=" in link or "hash=" in link or "_pgn=" in link):
                             # Add the pages that we visited to the end of our collection of pages to visit:
                             pagesToVisit.put(link)
+                            num_of_links_left.value+=1
     print("Process existing")
     
 def parse_url(url):
@@ -263,11 +267,13 @@ if __name__ == "__main__":
                 search_term += "+" + sys.argv[i]
 
     amazon_URL = amazon_URL + search_term
-    #links.put(amazon_URL)
+    links.put(amazon_URL)
+    num_of_links_left.value += 1
 
     ebay_URL = ebay_URL % search_term
     links.put(ebay_URL)
-    
+    num_of_links_left.value += 1
+
     search_term = search_term.replace("+", "_") 
     file_name = "./" + search_term + '.csv'
     file = open(file_name, 'w+')
@@ -275,13 +281,14 @@ if __name__ == "__main__":
     #writer.writerow(["Link", "Title", "Image", "Price range", "Avg price"])
 
     start = time.time()
-
-    the_pool = multiprocessing.Pool(target, crawl,(links, productLinks, target, ebay_URL, amazon_URL,))
+    print("Hello world");
+    the_pool = multiprocessing.Pool(target, crawl, (links, productLinks, target, ebay_URL, amazon_URL,))
 
     the_pool.close() # no more tasks
+
     the_pool.join()  # wrap up current tasks
 
-    for i in range(productLinks.qsize()):
+    for i in range(num_of_crawled_links.value):
         writer.writerow(productLinks.get().split(','))
     file.close()
 
