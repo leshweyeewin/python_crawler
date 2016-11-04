@@ -21,7 +21,7 @@ num_of_crawled_links = multiprocessing.Value('i', 0)
 target = 0
 amazon_URL = "https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords="
 ebay_URL = "http://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=%s&_sacat=0"
-aliexpress_URL = "https://www.aliexpress.com/wholesale?catId=0&initiative_id=SB_20161031115352&SearchText=%s"
+aliexpress_URL = "http://www.aliexpress.com/wholesale?catId=0&initiative_id=SB_20161031115352&SearchText=%s"
 lazada_URL = "http://www.lazada.sg/catalog/?q=%s"
 rakuten_URL = "http://global.rakuten.com/en/search/?k=%s"
 carousell_URL = "https://carousell.com/search/products/?query=%s"
@@ -119,8 +119,31 @@ def getLinks_ebay(url, soup, protocol, domain):
     for attr in soup.find_all('a'):
         link = attr.get('href')
         if (link != None): 
-            if ("hash=" in link or "_pgn=" in link and link not in links):
-                if (link not in pagesVisited):
+            if ("hash=" in link or "_pgn=" in link):
+                if (link not in pagesVisited and link not in links):
+                    links = links + [link]
+    return links
+
+def getLinks_aliexpress(url, soup, protocol, domain):
+    links = []
+    #print(soup.prettify().encode('utf-8'))
+    # get all links of result pages
+    for attr in soup.find_all('a', attrs={'class':'history-item product '}):
+        link = attr.get('href')
+        if (link != None): 
+            link = protocol + ":" + link
+            if (link not in pagesVisited and link not in links):
+                #print(link)
+                links = links + [link]
+
+    # get all links of result pages
+    for attr in soup.find_all('a'):
+        link = attr.get('href')
+        if (link != None): 
+            if ("page=" in link and "page=1" not in link):
+                link = protocol + ":" + link
+                if (link not in pagesVisited and link not in links):
+                    #print(link)
                     links = links + [link]
     return links
 
@@ -139,8 +162,8 @@ def getLinks_lazada(url, soup, protocol, domain):
     for attr in soup.find_all('link'):
         link = attr.get('href')
         if (link != None): 
-            if ("?page=" in link and "?page=1" not in link and link not in links):
-                if (link not in pagesVisited):
+            if ("?page=" in link and "?page=1" not in link):
+                if (link not in pagesVisited and link not in links):
                     #print(link)
                     links = links + [link]       
     return links
@@ -152,8 +175,8 @@ def getLinks_rakuten(url, soup, protocol, domain):
     for attr in soup.find_all('div', attrs={'class':'b-content b-fix-2lines'}): 
         if(attr.a != None):
             link = attr.a['href']
-            if (link not in pagesVisited):
-                link = protocol + "://" + domain + link
+            link = protocol + "://" + domain + link
+            if (link not in pagesVisited and link not in links):
                 #print(link)
                 links = links + [link]
 
@@ -161,9 +184,9 @@ def getLinks_rakuten(url, soup, protocol, domain):
     for attr in soup.find_all('a'):
         link = attr.get('href')
         if (link != None): 
-            if ("?p=" in link and "?p=1" not in link and link not in links):
-                if (link not in pagesVisited):
-                    link = protocol + "://" + domain + link
+            if ("?p=" in link and "?p=1" not in link):
+                link = protocol + "://" + domain + link
+                if (link not in pagesVisited and link not in links):
                     #print(link)
                     links = links + [link]       
     return links
@@ -175,8 +198,8 @@ def getLinks_carousell(url, soup, protocol, domain):
         link = attr.get('href')
         if (link != None): 
             if (("page=" in link and "page=1" not in link) or "/p/" in link):
+                link = protocol + "://" + domain + link
                 if (link not in pagesVisited and link not in links):
-                    link = protocol + "://" + domain + link
                     #print(link)
                     links = links + [link] 
     return links
@@ -208,10 +231,10 @@ if __name__ == "__main__":
     # Add Links
     links.put(amazon_URL)
     links.put(ebay_URL)
-    # links.put(aliexpress_URL)
+    links.put(aliexpress_URL)
     links.put(lazada_URL)
     # links.put(zalora_URL)
-    # links.put(carousell_URL)
+    links.put(carousell_URL)
     links.put(rakuten_URL)
     
     search_term = search_term.replace("+", "_") 
