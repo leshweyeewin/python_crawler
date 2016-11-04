@@ -149,9 +149,9 @@ def getLinks_rakuten(url, soup, protocol, domain):
     links = []
     #print(soup.prettify().encode('utf-8'))
     # get all links of product pages
-    for attr in soup.find_all('div', attrs={'class':'b-content b-fix-2lines'}):           
-        link = attr.a['href']
-        if (link != None): 
+    for attr in soup.find_all('div', attrs={'class':'b-content b-fix-2lines'}): 
+        if(attr.a != None):
+            link = attr.a['href']
             if (link not in pagesVisited):
                 link = protocol + "://" + domain + link
                 #print(link)
