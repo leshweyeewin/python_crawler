@@ -283,6 +283,49 @@ def parse_carousell(html_text):
     except:
         return "error"
 
+#Input: HTML Text
+#Output: "url,name,price" (if successful)
+#        "error" (if fail) 
+
+def parse_rakuten(html_text):
+    try:
+        soup = BeautifulSoup(html_text, "html.parser")
+        #find title
+        seivedTitle = soup.find_all('title')
+        name = str(seivedTitle).split(":")[1].strip()
+        name = name.split("<")[0]
+
+        #find image
+        seivedImage = soup.find_all('img', attrs={'id':'main_image'})
+        image = str(seivedImage).split("src=\"")[1]
+        image = image.split("\"")[0]
+        
+        #find price
+        seivedPrice = soup.find_all('span', attrs={'id':'price_in_dollars'})
+        price = str(seivedPrice).split("\\n")[1].strip()
+        return name +"," + image + "," + price + "," + price
+    except:
+        return "error"
+
+#Input: HTML Text
+#Output: "url,name,price" (if successful)
+#        "error" (if fail) 
+def parse_zalora(html_text):
+    try:
+        soup = BeautifulSoup(html_text, "html.parser")
+        discountPrice = soup.find_all('span', attrs={'class':'js-detail_updateSku_lowestPrice'})
+        if(len(discountPrice) < 1):
+            price = soup.find_all('span', attrs={'class':'value'})[0]   
+        else:
+            price = discountPrice[0].find_all('span', attrs={'class':'value'})[0]
+        name = soup.find_all('div', attrs={'itemprop':'name'})[0]
+        img = soup.find_all('img', attrs={'itemprop':'image'})[0]
+        if (len(name.contents) < 1):
+            return "error"
+        return name.contents[0] + "," + str(img.get('src')).split("ffffff)/")[1] + "," + str(price.contents[0]) + " - " + str(price.contents[0]) + "," + str(price.contents[0])
+    except:
+        return "error"
+
 
 # Main Program
 # To run:
