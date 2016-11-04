@@ -168,6 +168,19 @@ def getLinks_rakuten(url, soup, protocol, domain):
                     links = links + [link]       
     return links
 
+def getLinks_carousell(url, soup, protocol, domain):
+    links = []
+    #print(soup.prettify().encode('utf-8'))
+    for attr in soup.find_all('a'):
+        link = attr.get('href')
+        if (link != None): 
+            if (("page=" in link and "page=1" not in link) or "/p/" in link):
+                if (link not in pagesVisited and link not in links):
+                    link = protocol + "://" + domain + link
+                    #print(link)
+                    links = links + [link] 
+    return links
+
 
 # Main Program
 # To run:
