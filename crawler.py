@@ -27,7 +27,6 @@ rakuten_URL = "http://global.rakuten.com/en/search/?k=%s"
 carousell_URL = "https://carousell.com/search/products/?query=%s"
 zalora_URL = "https://www.zalora.sg/catalog/?q=%s"
 
-
 def crawl(pagesToVisit, productPages):
     global pagesVisited, exitFlag, num_of_crawled_links
     while not exitFlag:
@@ -96,6 +95,7 @@ def getLinks(url, soup, protocol, domain):
 def getLinks_amazon(url, soup, protocol, domain):
     links = []
     #print(soup.prettify().encode('utf-8'))
+    
     # get all links of product pages
     for attr in soup.find_all('a', attrs={'class':'a-link-normal a-text-normal'}):    
         link = attr.get('href')
@@ -116,6 +116,7 @@ def getLinks_amazon(url, soup, protocol, domain):
 def getLinks_ebay(url, soup, protocol, domain):
     links = []
     #print(soup.prettify().encode('utf-8'))
+    
     for attr in soup.find_all('a'):
         link = attr.get('href')
         if (link != None): 
@@ -127,6 +128,7 @@ def getLinks_ebay(url, soup, protocol, domain):
 def getLinks_aliexpress(url, soup, protocol, domain):
     links = []
     #print(soup.prettify().encode('utf-8'))
+    
     # get all links of result pages
     for attr in soup.find_all('a', attrs={'class':'history-item product '}):
         link = attr.get('href')
@@ -150,6 +152,7 @@ def getLinks_aliexpress(url, soup, protocol, domain):
 def getLinks_lazada(url, soup, protocol, domain):
     links = []
     #print(soup.prettify().encode('utf-8'))
+    
     # get all links of result pages
     for attr in soup.find_all('div', attrs={'class':'product-card new_ outofstock installments_ mastercard'}):
         link = attr.a['href']
@@ -168,9 +171,37 @@ def getLinks_lazada(url, soup, protocol, domain):
                     links = links + [link]       
     return links
 
+def getLinks_zalora(url, soup, protocol, domain):
+    links = []
+    #print(soup.prettify().encode('utf-8'))
+
+    # get html response
+    response = requests.get(url).text
+    response = response[response.find("app.settings = {"):response.find("app.i18n")]
+
+    # get all links of product pages
+    for link in response.split("\"link\":"):
+        if("\"image\":" in link):
+            link = protocol + "://" + domain + "/" + link.split(",")[0].replace("\"", "")
+            if (link not in pagesVisited and link not in links):
+                #print(link)
+                links = links + [link]
+
+    # get all links of result pages (do once for initial link only)
+    if(url == zalora_URL):
+        totalItems = int(response.split("\"total_items\":")[1].split(",")[0])
+        itemsPerPage = int(response.split("\'ITEM_PER_PAGE\': ")[1].split(",")[0]) 
+        n_pages = -(-totalItems // itemsPerPage)
+        for i in range(2, n_pages+1):
+            link = url + "&page=" + str(i)
+            #print(link)
+            links = links + [link]
+    return links
+
 def getLinks_rakuten(url, soup, protocol, domain):
     links = []
     #print(soup.prettify().encode('utf-8'))
+    
     # get all links of product pages
     for attr in soup.find_all('div', attrs={'class':'b-content b-fix-2lines'}): 
         if(attr.a != None):
@@ -194,6 +225,7 @@ def getLinks_rakuten(url, soup, protocol, domain):
 def getLinks_carousell(url, soup, protocol, domain):
     links = []
     #print(soup.prettify().encode('utf-8'))
+    
     for attr in soup.find_all('a'):
         link = attr.get('href')
         if (link != None): 
@@ -233,7 +265,7 @@ if __name__ == "__main__":
     links.put(ebay_URL)
     links.put(aliexpress_URL)
     links.put(lazada_URL)
-    # links.put(zalora_URL)
+    links.put(zalora_URL)
     links.put(carousell_URL)
     links.put(rakuten_URL)
     
