@@ -58,16 +58,19 @@ class Parser:
 	            firstVal = removedDash[0]
 	            firstVal = (firstVal.split('$'))[1] # extract the numbers
 	            mean = float(firstVal)
+	            firstVal = firstVal.replace(',', '')
 	            # return format = name, value, mean
 	            # example: name, image, 43.00, 43.00        
-	            return name + "," +img + "," + firstVal + " - " +firstVal + "," + firstVal
+	            return name + "," +img + "," + firstVal.replace(',', '') + " - " +firstVal + "," + firstVal
 
 	        # range of prices
 	        else:
 	            firstVal = removedDash[0].strip()
 	            secondVal = removedDash[1].strip()
 	            firstVal = (firstVal.split('$'))[1]
+	            firstVal = firstVal.replace(',','')
 	            secondVal = (secondVal.split('$'))[1]
+	            secondVal = secondVal.replace(',','')
 	            mean = (float(firstVal)+float(secondVal))/2.0
 	            # return format = name, range, mean
 	            # return example: name, image, 40.00 - 60.00, 50.00
@@ -100,8 +103,8 @@ class Parser:
 	        if(len(seivedSpan) == 0):
 	            print ("error: no price found")
 	        price = str(seivedSpan[0].contents[0])
-	            
-	        return name +"," + image + "," + str(price) + " - " + str(price) + "," + str(price)
+	        price = price.replace(',','')
+	        return name.replace('\n','') +"," + image + "," + str(price) + " - " + str(price) + "," + str(price)
 	    except:
 	        return "error"
 
@@ -119,7 +122,9 @@ class Parser:
 	        img = soup.findAll('img', {'id':'icImg'})[0]
 	        if (len(name.contents) < 2 or len(span.contents) < 1):
 	            return "error"
-	        return name.contents[1] + "," + img.get('src') + "," + str(span.contents[0]) + "-" + str(span.contents[0]) + "," + str(span.contents[0].split("$")[1])
+	        price = span.contents[0]
+	        price = price.replace(',','')
+	        return name.contents[1] + "," + img.get('src') + "," + str(span.contents[0]) + "-" + str(span.contents[0]) + "," + str(price.split("$")[1])
 	    except:
 	        return "errror"
 
@@ -141,7 +146,7 @@ class Parser:
 	        mean = (float(lowPrice.contents[0]) + float(highPrice.contents[0])) / 2.0
 	        if (len(name.contents) < 1 or lowPrice.contents[0] < 0 or highPrice.contents[0] < 0):
 	            print ("error")
-	        return name.contents[0] + "," + img.get('src') + "," + str(lowPrice.contents[0]) + "-" + str(highPrice.contents[0]) + "," + str(mean)
+	        return name.contents[0] + "," + img.get('src') + "," + str(lowPrice.contents[0]).replace(',','') + "-" + str(highPrice.contents[0]).replace(',','') + "," + str(mean)
 	    except:
 	        return "error"
 
@@ -157,7 +162,7 @@ class Parser:
 	        img = soup.find_all('img')
 	        if (len(name.contents) < 1):
 	            return "error"
-	        return name.contents[0] + "," + img[0].get('data-layzr') + "," + str(price[0].get('content')) + " - " + str(price[0].get('content')) + "," + str(price[0].get('content'))
+	        return name.contents[0] + "," + img[0].get('data-layzr') + "," + str(price[0].get('content')).replace(',','') + " - " + str(price[0].get('content')).replace(',','') + "," + str(price[0].get('content')).replace(',', '')
 	    except:
 	        return "error"
 
@@ -180,7 +185,8 @@ class Parser:
 	        #find price
 	        seivedPrice = soup.find_all('span', attrs={'id':'price_in_dollars'})
 	        price = str(seivedPrice).split("\\n")[1].strip()
-	        return name +"," + image + "," + price + "," + price
+	        price.replace(',', '')
+	        return name +"," + image + "," + price + "-" + price + "," + price
 	    except:
 	        return "error"
 
@@ -199,6 +205,6 @@ class Parser:
 	        img = soup.find_all('img', attrs={'itemprop':'image'})[0]
 	        if (len(name.contents) < 1):
 	            return "error"
-	        return name.contents[0] + "," + str(img.get('src')).split("ffffff)/")[1] + "," + str(price.contents[0]) + " - " + str(price.contents[0]) + "," + str(price.contents[0])
+	        return name.contents[0] + "," + str(img.get('src')).split("ffffff)/")[1] + "," + str(price.contents[0]).replace(',', '') + " - " + str(price.contents[0]).replace(',', '') + "," + str(price.contents[0]).replace(',' ,'')
 	    except:
 	        return "error"
