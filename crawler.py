@@ -181,7 +181,7 @@ def getLinks_zalora(url, soup, protocol, domain):
 
     # get all links of product pages
     for link in response.split("\"link\":"):
-        if("\"image\":" in link):
+        if("\"image\":" in link and len(link.split(",")) > 0):
             link = protocol + "://" + domain + "/" + link.split(",")[0].replace("\"", "")
             if (link not in pagesVisited and link not in links):
                 #print(link)
@@ -189,8 +189,15 @@ def getLinks_zalora(url, soup, protocol, domain):
 
     # get all links of result pages (do once for initial link only)
     if(url == zalora_URL):
-        totalItems = int(response.split("\"total_items\":")[1].split(",")[0])
-        itemsPerPage = int(response.split("\'ITEM_PER_PAGE\': ")[1].split(",")[0]) 
+        if(len(response.split("\"total_items\":")) > 1):
+            totalItems_1 = response.split("\"total_items\":")[1]
+            if(len(totalItems_1.split(",")) > 0):
+                totalItems = int(totalItems_1.split(",")[0])
+
+        if(len(response.split("\'ITEM_PER_PAGE\': ")) > 1):
+            itemsPerPage_1 = response.split("\'ITEM_PER_PAGE\': ")[1]
+            if(len(itemsPerPage_1.split(",")) > 0):
+                itemsPerPage = int(itemsPerPage_1.split(",")[0]) 
         n_pages = -(-totalItems // itemsPerPage)
         for i in range(2, n_pages+1):
             link = url + "&page=" + str(i)
